@@ -42,46 +42,55 @@ $(function () {
     li.remove();
   });
 
+  ready("dom");
+
 });
 
 function reportError() {
   console.error("Error:", this.error);
 }
 
-var dbRequest = indexedDB.open("FilesToShare2");
+var dbRequest = indexedDB.open("FilesToShare");
 var db = null;
 dbRequest.onerror = reportError;
-var DB_VERSION = "1.0";
+var DB_VERSION = 2;
 dbRequest.onsuccess = function () {
   db = this.result;
-  console.log('Opened database', db);
-  if (db.version != DB_VERSION) {
-    var versionReq = db.setVersion(DB_VERSION);
-    versionReq.onerror = reportError;
-    versionReq.onsuccess = function () {
-      console.log('Set new version');
-      var fileStore = db.createObjectStore("files", {keyPath: "filename"});
-      fileStore.createIndex("filename", "filename", {unique: true});
-      this.transaction.oncomplete = function () {
-        console.log('Created stores');
-        dbReady();
-      };
-    };
+  console.log('Opened database', db, db.version);
+  if (db.setVersion && db.version != DB_VERSION) {
+    createDBStores(callback);
   } else {
-    dbReady();
+    ready("db");
   }
 };
+dbRequest.onupgradeneeded = createDBStores;
 
-function dbReady() {
-  iterFiles(function (err, key, value) {
-    if (value) {
-      shareFile(value);
-    }
-  });
+function createDBStores(callback) {
+  var versionReq = db.setVersion(DB_VERSION);
+  versionReq.onerror = reportError;
+  versionReq.onsuccess = function () {
+    console.log('Set new version');
+    var fileStore = db.createObjectStore("files", {keyPath: "filename"});
+    fileStore.createIndex("filename", "filename", {unique: true});
+    this.transaction.oncomplete = function () {
+      console.log('Created stores');
+      ready("db");
+    };
+  };
+}
+
+function ready(name) {
+  ready[name] = true;
+  if (ready.db && ready.dom) {
+    iterFiles(function (err, key, value) {
+      if (value) {
+        shareFile(value);
+      }
+    });
+  }
 }
 
 function shareFile(file) {
-  saveFile(file, function () {});
   var result = fileTemplate({filename: file.name || file.filename, type: file.type, size: file.size});
   result = $(result);
   $('#null-share').remove();
