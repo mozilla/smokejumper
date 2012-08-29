@@ -1,0 +1,30 @@
+{
+  "author": "Simon C. Wex <swex@mozilla.com> (http://simonwex.com)",
+  "name": "SmokeJumper",
+  "version": "0.0.0",
+  "homepage": "https://github.com/simonwex/smokejumper",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/simonwex/smokejumper.git"
+  },
+  "dependencies": {
+    "express": "latest",
+    "socket.io": "latest",
+    "redis": "latest",
+    "connect": "latest",
+    "connect-redis": "latest",
+    "sha1": "latest",
+    "winston": "latest",
+    "ejs": "latest",
+    "semver": "latest",
+    "convict": "latest",
+    "cjson": "latest",
+    "node-uuid": "latest",
+    "hashish": "latest"
+  },
+  "devDependencies": {},
+  "optionalDependencies": {},
+  "engines": {
+    "node": "*"
+  }
+}
