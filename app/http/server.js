@@ -9,54 +9,41 @@ require('../../lib/extensions/number');
 
 const 
 express     = require('express'),
+http        = require('http')
 logger      = require('../../lib/logger'),
 util        = require('util'),
-connect     = require('connect'),
-RedisStore  = require('connect-redis')(connect),
 application = require('./controllers/application'),
-config      = require('../../lib/configuration');
+config      = require('../../lib/configuration'),
+partials    = require('express-partials');
 
-var http = express();
+var app = express();
 
-var redisConfig = config.get('redis');
-var sessionStore = new RedisStore({
-  host: redisConfig.host,
-  port: redisConfig.port,
-  maxAge: (30).days
-});
+app.use(partials());
 
 // Express Configuration
-http.configure(function(){
-  http.set('views', __dirname + '/views');
-  http.set('view engine', 'ejs');
+app.configure(function(){
+  app.set('views', __dirname + '/views');
+  app.set('view engine', 'ejs');
 
-  http.use(express.logger());
-  http.use(express.static(__dirname + '/public'));
-  http.use(express.cookieParser());
-  http.use(express.bodyParser());
-  http.use(express.methodOverride());
-  //TODO: Load secret from config/env var
-  http.use(express.session({
-    secret: "I feed lunch meat to my neighbour's \"vegan\" dog.",
-    key: 'express.sid',
-    store: sessionStore,
-    cookie: {maxAge: (365).days()}
-  }));
-
-  http.use(function (req, res, next) {
+  app.use(express.logger());
+  app.use(express.static(__dirname + '/public'));
+  app.use(express.bodyParser());
+  app.use(express.methodOverride());
+  
+  app.use(function (req, res, next) {
     res.removeHeader("X-Powered-By");
     next();
   });
 
-  http.use(http.router);
+  app.use(app.router);
 });
 
-http.configure('development', function(){
-  http.use(express.errorHandler({ dumpExceptions: true, showStack: true }));
+app.configure('development', function(){
+  app.use(express.errorHandler({ dumpExceptions: true, showStack: true }));
 });
 
-http.configure('production', function(){
-  http.use(express.errorHandler());
+app.configure('production', function(){
+  app.use(express.errorHandler());
 });
 
 // HTTP Routes
@@ -64,13 +51,14 @@ routes = {
   site: require('./controllers/site')
 };
 
-http.get('/', routes.site.index);
+app.get('/', routes.site.index);
 
 process.on('uncaughtException', function(err) {
   logger.error(err);
 });
 
 var port = config.get('bind_to').port;
-http.listen(config.get('bind_to').port);
+var httpd = http.createServer(app);
+httpd.listen(config.get('bind_to').port);
 
 logger.info("HTTP server listening on port " + port + ".");
