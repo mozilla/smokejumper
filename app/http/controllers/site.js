@@ -2,9 +2,14 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+var ShortId = require('shortid');
+
 /*
- * GET home page.
+ * GET for "/". Here we just redirect to a unique share URL.
  */
-exports.index = function(req, res){
-  res.render('site/index', { user: req.user });
+exports.index = function(req, resp){
+  resp.writeHead(302, {
+    'Location': '/share/' + ShortId.generate()
+  });
+  resp.end();
 };
