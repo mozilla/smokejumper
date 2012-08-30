@@ -13,6 +13,7 @@ http        = require('http')
 logger      = require('../../lib/logger'),
 util        = require('util'),
 application = require('./controllers/application'),
+socket      = require('./socket'),
 config      = require('../../lib/configuration'),
 partials    = require('express-partials');
 
@@ -48,10 +49,13 @@ app.configure('production', function(){
 
 // HTTP Routes
 routes = {
-  site: require('./controllers/site')
+  site: require('./controllers/site'),
+  share: require('./controllers/share')
 };
 
 app.get('/', routes.site.index);
+
+app.get('/share/:id', routes.share.file);
 
 process.on('uncaughtException', function(err) {
   logger.error(err);
@@ -60,5 +64,7 @@ process.on('uncaughtException', function(err) {
 var port = config.get('bind_to').port;
 var httpd = http.createServer(app);
 httpd.listen(config.get('bind_to').port);
+
+socket.listen(httpd);
 
 logger.info("HTTP server listening on port " + port + ".");
