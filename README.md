@@ -17,6 +17,21 @@ https://developer.mozilla.org/en-US/docs/Simple_Firefox_build
 
 http://hg.mozilla.org/projects/alder/
 
+Server Installation:
+--------------------
+
+In the root of the project, run the following:
+
+<pre>
+$> npm install
+$> NODE_ENV=development ./app.js
+</pre>
+
+This defaults to http://localhost:3000/. A few things are hard-coded at the moment, so it's best to run it on that port.
+
+Open a browser to http://localhost:3000/ you'll be redirected to a unique URL. Open that url in another tab.
+
+
 Tips & Tricks:
 --------------
 
