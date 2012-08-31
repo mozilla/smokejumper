@@ -26,7 +26,7 @@ module.exports = {
 
     //We reject the socket request if it's for a share id that already has two connections.
     socket.on('request', function(request){
-      var id = request.resourceURL.pathname.substr(2);
+      var id = request.resourceURL.pathname.substr(1);
 
       var share = shares[id];
 
@@ -44,7 +44,14 @@ module.exports = {
       }
 
       var connection = request.accept();
-      connection.shareId = id;
+      connection.share = share;
+      connection.sendMessage = function(topic, data, callback){
+        console.log('Sending message: ' + topic);
+        if (typeof(data) == 'function')
+          callback = data;
+
+        this.sendUTF(JSON.stringify({'topic': topic, 'data': data}), callback);
+      };
 
       // this means we're the receiver (There's already a sender)
       if (share.sender){
@@ -54,13 +61,13 @@ module.exports = {
           share.receiver = null;
 
           if (share.sender)
-            share.sender.sendUTF(JSON.stringify({topic: 'receiver quit'}));
+            share.sender.sendMessage('receiver quit');
         });
 
-        connection.sendUTF(JSON.stringify({topic: 'incoming'}));
+        connection.sendMessage('incoming');
 
         if (share.sender)
-          share.sender.sendUTF(JSON.stringify({topic: 'receiver connected'}));
+          share.sender.sendMessage('receiver connected');
       }
       else{ //This means we're the sender
         share.sender = connection;
@@ -71,13 +78,49 @@ module.exports = {
           delete shares[share.id];
 
           if (share.receiver)
-            share.receiver.sendUTF(JSON.stringify({topic: 'sender quit'}), function(){
+            share.receiver.sendMessage('sender quit', function(){
               share.receiver.close();
             });
         });
 
-        connection.sendUTF(JSON.stringify({topic: 'share away'}));
+        connection.sendMessage('share away');
       }
+    });
+
+    var handlers = {
+      shareOffer: function(offer, share){
+        if (share.receiver){
+          share.receiver.sendMessage('share offer received', offer);
+        }
+        else{
+          console.log("Error: receiver not connected for share offer");
+          //TODO: Send message down the pipe to sender.
+        }
+      }
+    };
+
+    socket.on('message', function(rawMessage){
+      if (message.type === 'utf8') { // accept only text
+        try{
+          var message = JSON.parse(rawMessage.utf8Data);
+
+          var handler = handlers[message.topic];
+
+          if (handler){
+            handler(message.data, this.share);
+          }
+          else{
+            console.log("Unhandled message: " + rawMessage.data);
+          }
+        }
+        catch(e){
+          console.log('Error parsing message received from client: ' + message.utf8Data);
+        }
+      }
+      else{
+        console.log("Received unrecognized data type on socket: " + message.type);
+      }
+
     });
   }
 }
