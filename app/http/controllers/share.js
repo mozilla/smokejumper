@@ -3,5 +3,5 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 exports.file = function(req, res){
-  res.render('share/file.ejs', {id: req.params.id});
+  res.render('share/file.ejs', {id: req.params.id, layout: null});
 };
