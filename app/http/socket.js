@@ -53,6 +53,46 @@ module.exports = {
         this.sendUTF(JSON.stringify({'topic': topic, 'data': data}), callback);
       };
 
+      var handlers = {
+        shareOffer: function(offer, share){
+          if (share.receiver){
+            share.receiver.sendMessage('share offer received', offer);
+          }
+          else{
+            console.log("Error: receiver not connected for share offer");
+            //TODO: Send message down the pipe to sender.
+          }
+        },
+        acceptShareOffer: function(answer, share){
+          share.sender.sendMessage('share offer accepted', answer);
+        }
+      };
+
+      connection.on('message', function(rawMessage){
+        if (rawMessage.type === 'utf8') { // accept only text
+          try{
+            var message = JSON.parse(rawMessage.utf8Data);
+
+            var handler = handlers[message.topic];
+
+            if (handler){
+              console.log("Handling message: " + message.topic);
+              handler(message.data, this.share);
+            }
+            else{
+              console.log("Unhandled message: " + rawMessage.data);
+            }
+          }
+          catch(e){
+            console.log('Error parsing message received from client: ' + rawMessage.utf8Data);
+          }
+        }
+        else{
+          console.log("Received unrecognized data type on socket: " + rawMessage.type);
+        }
+
+      });
+
       // this means we're the receiver (There's already a sender)
       if (share.sender){
         share.receiver = connection;
@@ -85,42 +125,6 @@ module.exports = {
 
         connection.sendMessage('share away');
       }
-    });
-
-    var handlers = {
-      shareOffer: function(offer, share){
-        if (share.receiver){
-          share.receiver.sendMessage('share offer received', offer);
-        }
-        else{
-          console.log("Error: receiver not connected for share offer");
-          //TODO: Send message down the pipe to sender.
-        }
-      }
-    };
-
-    socket.on('message', function(rawMessage){
-      if (message.type === 'utf8') { // accept only text
-        try{
-          var message = JSON.parse(rawMessage.utf8Data);
-
-          var handler = handlers[message.topic];
-
-          if (handler){
-            handler(message.data, this.share);
-          }
-          else{
-            console.log("Unhandled message: " + rawMessage.data);
-          }
-        }
-        catch(e){
-          console.log('Error parsing message received from client: ' + message.utf8Data);
-        }
-      }
-      else{
-        console.log("Received unrecognized data type on socket: " + message.type);
-      }
-
     });
   }
 }
