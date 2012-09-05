@@ -14,8 +14,9 @@ $(function(){
 
   window.WebSocket = window.WebSocket || window.MozWebSocket;
 
-  //TODO: Get this from config.
-  var socket = new WebSocket('ws://127.0.0.1:3000' + document.location.pathname.substr(6));
+  var protocol = document.location.protocol == 'https:' ? 'wss:' : 'ws:';
+
+  var socket = new WebSocket(protocol + '//' + document.location.host + document.location.pathname.substr(6));
 
   socket.onopen = function(){
     console.log("Socket open.");
