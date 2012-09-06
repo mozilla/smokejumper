@@ -86,7 +86,7 @@ $(function(){
 
         dataChannel.onopen = function(){
           console.log("onopen fired for " + dataChannel);
-          channel.send("This is a test of the emergency broadcast system.");
+          dataChannel.send("This is a test of the emergency broadcast system.");
         };
 
         dataChannel.onclose = function() {
@@ -143,12 +143,17 @@ $(function(){
     // Socket events for receiving:
     'incoming': function(){
       $('#receiver').show();
+      peerConnection.onConnection = function() {
+        console.log("Receiver peer connection connected.");
+      };
+
       peerConnection.onDataChannel = function(channel){
+
         dataChannel = channel;
         dataChannel.binaryType = "blob";
         dataChannel.onmessage = function(event){
           console.log("On Message event received");
-          console.log(event);
+          console.log(event.data);
         };
       };
     },
